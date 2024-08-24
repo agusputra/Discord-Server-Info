@@ -53,7 +53,11 @@
             border-radius: 8px;
             padding: 20px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            cursor: move;
+            cursor: pointer;
+            height: 350px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
         .card h2 {
             margin-top: 0;
@@ -64,17 +68,60 @@
             margin: 5px 0;
             font-size: 0.9em;
         }
-        .deleteBtn {
-            background-color: #ff4136;
+        .card-buttons {
+            margin-top: auto;
+            display: flex;
+            justify-content: space-between;
+        }
+        .deleteBtn, .viewBtn {
+            background-color: #7289da;
             color: white;
             border: none;
             padding: 5px 10px;
             border-radius: 4px;
             cursor: pointer;
-            float: right;
+        }
+        .deleteBtn {
+            background-color: #ff4136;
         }
         .deleteBtn:hover {
             background-color: #e60000;
+        }
+        .viewBtn:hover {
+            background-color: #5a6ebd;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 600px;
+            border-radius: 8px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
         }
         @media (max-width: 1200px) {
             #cardContainer {
@@ -108,6 +155,13 @@
         <div id="cardContainer"></div>
     </div>
 
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div id="modalContent"></div>
+        </div>
+    </div>
+
     <script>
         document.getElementById('urlForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -130,24 +184,61 @@
             card.className = 'card';
             card.draggable = true;
 
-            const deleteBtn = document.createElement('button');
-            deleteBtn.className = 'deleteBtn';
-            deleteBtn.textContent = 'Delete';
-            deleteBtn.onclick = () => card.remove();
-
             card.innerHTML = `
                 <h2>${data.guild.name}</h2>
                 <p><strong>Description:</strong> ${data.guild.description}</p>
                 <p><strong>Members:</strong> ${data.approximate_member_count}</p>
                 <p><strong>Online:</strong> ${data.approximate_presence_count}</p>
-                <p><strong>Features:</strong> ${data.guild.features.join(', ')}</p>
+                <div class="card-buttons">
+                    <button class="viewBtn">View</button>
+                    <button class="deleteBtn">Delete</button>
+                </div>
             `;
 
-            card.appendChild(deleteBtn);
+            card.querySelector('.deleteBtn').onclick = (e) => {
+                e.stopPropagation();
+                card.remove();
+            };
+
+            card.onclick = () => showModal(data);
+            card.querySelector('.viewBtn').onclick = (e) => {
+                e.stopPropagation();
+                showModal(data);
+            };
+
             document.getElementById('cardContainer').appendChild(card);
 
             initDragAndDrop();
         }
+
+        function showModal(data) {
+            const modal = document.getElementById('modal');
+            const modalContent = document.getElementById('modalContent');
+            modalContent.innerHTML = `
+                <h2>${data.guild.name}</h2>
+                <p><strong>Description:</strong> ${data.guild.description}</p>
+                <p><strong>Members:</strong> ${data.approximate_member_count}</p>
+                <p><strong>Online:</strong> ${data.approximate_presence_count}</p>
+                <p><strong>Features:</strong> ${data.guild.features.join(', ')}</p>
+                <p><strong>Verification Level:</strong> ${data.guild.verification_level}</p>
+                <p><strong>NSFW Level:</strong> ${data.guild.nsfw_level}</p>
+                <p><strong>Premium Subscription Count:</strong> ${data.guild.premium_subscription_count}</p>
+                <p><strong>Inviter:</strong> ${data.inviter ? data.inviter.username : 'N/A'}</p>
+                <p><strong>Expires At:</strong> ${data.expires_at || 'Never'}</p>
+            `;
+            modal.style.display = 'block';
+        }
+
+        document.querySelector('.close').onclick = () => {
+            document.getElementById('modal').style.display = 'none';
+        };
+
+        window.onclick = (event) => {
+            const modal = document.getElementById('modal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        };
 
         function initDragAndDrop() {
             const cards = document.querySelectorAll('.card');
